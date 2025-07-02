@@ -100,3 +100,32 @@ class Security(BaseModel):
                 name='security_symbol_idx'
             ),
         ]
+
+
+class Company(BaseModel):
+    company_name = models.CharField(max_length=128, null=True, blank=True)
+    security = models.ForeignKey(
+        'nepse.Security',
+        related_name='companies',
+        on_delete=models.DO_NOTHING,
+        null=True, blank=True
+    )
+    active_status = models.CharField(
+        max_length=8,
+        choices=BaseModel.ACTIVE_STATUS,
+        null=True, blank=True
+    )
+    company_email = models.EmailField(max_length=128, null=True, blank=True)
+    website = models.URLField(max_length=256, null=True, blank=True)
+    sector = models.ForeignKey(
+        'nepse.Sector',
+        related_name='companies',
+        on_delete=models.DO_NOTHING,
+        null=True, blank=True
+    )
+    regulatory_body = models.CharField(max_length=128, null=True, blank=True)
+    instrument_type = models.CharField(max_length=64, null=True, blank=True)
+
+    class Meta:
+        pass
+
