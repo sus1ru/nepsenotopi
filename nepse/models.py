@@ -134,7 +134,7 @@ class SecurityLog(BaseModel):
     business_date = models.DateTimeField(blank=True, null=True)
     security = models.ForeignKey(
         'nepse.Security',
-        related_name='companies',
+        related_name='security_logs',
         on_delete=models.DO_NOTHING,
         null=True, blank=True
     )
@@ -187,4 +187,9 @@ class SecurityLog(BaseModel):
     )
 
     class Meta:
-        pass
+        indexes = [
+            models.Index(
+                fields=['business_date', 'security'],
+                name='security_log_idx'
+            ),
+        ]
