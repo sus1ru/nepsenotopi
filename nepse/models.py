@@ -129,3 +129,62 @@ class Company(BaseModel):
     class Meta:
         pass
 
+
+class SecurityLog(BaseModel):
+    business_date = models.DateTimeField(blank=True, null=True)
+    security = models.ForeignKey(
+        'nepse.Security',
+        related_name='companies',
+        on_delete=models.DO_NOTHING,
+        null=True, blank=True
+    )
+    open_price = models.DecimalField(
+        max_digits=16, decimal_places=4,
+        blank=True, null=True
+    )
+    high_price = models.DecimalField(
+        max_digits=16, decimal_places=4,
+        blank=True, null=True
+    )
+    low_price = models.DecimalField(
+        max_digits=16, decimal_places=4,
+        blank=True, null=True
+    )
+    close_price = models.DecimalField(
+        max_digits=16, decimal_places=4,
+        blank=True, null=True
+    )
+    total_traded_quantity = models.IntegerField(blank=True, null=True)
+    total_traded_value = models.DecimalField(
+        max_digits=32, decimal_places=4,
+        blank=True, null=True
+    )
+    previous_day_close_price = models.DecimalField(
+        max_digits=16, decimal_places=4,
+        blank=True, null=True
+    )
+    fifty_two_week_high = models.DecimalField(
+        max_digits=16, decimal_places=4,
+        blank=True, null=True
+    )
+    fifty_two_week_low = models.DecimalField(
+        max_digits=16, decimal_places=4,
+        blank=True, null=True
+    )
+    last_updated_time = models.DateTimeField(blank=True, null=True)
+    last_updated_price = models.DecimalField(
+        max_digits=16, decimal_places=4,
+        blank=True, null=True
+    )
+    total_trades = models.IntegerField(blank=True, null=True)
+    average_traded_price = models.DecimalField(
+        max_digits=16, decimal_places=4,
+        blank=True, null=True
+    )
+    market_capitalization = models.DecimalField(
+        max_digits=16, decimal_places=4,
+        blank=True, null=True
+    )
+
+    class Meta:
+        pass
