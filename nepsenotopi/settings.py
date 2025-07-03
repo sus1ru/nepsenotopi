@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'user',
     'nepse',
+    'django_celery_beat',
     'rest_framework',
     'rest_framework.authtoken',
 ]
