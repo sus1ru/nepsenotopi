@@ -4,13 +4,13 @@ import json
 from httpx import RemoteProtocolError, ReadError, ConnectError
 import tqdm
 
-from nepse_settings import NepseSettings
-from nepse_errors import (
+from nepse.utils.nepse_errors import (
     NepseInvalidServerResponse,
     NepseInvalidClientRequest,
     NepseNetworkError,
 )
-from request_manager import RequestManager
+from nepse.utils.nepse_settings import NepseSettings
+from nepse.utils.request_manager import RequestManager
 
 
 class Nepse(NepseSettings):
@@ -60,7 +60,6 @@ class Nepse(NepseSettings):
                     'code': 400,
                     'error': response.text
                 }
-
 
         return wrapper
 
