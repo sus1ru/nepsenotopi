@@ -26,8 +26,10 @@ httpx[http2]==0.28.1
 hyperframe==6.1.0
 idna==3.10
 kombu==5.5.4
+numpy==2.3.1
 oauthlib==3.3.1
 packaging==25.0
+pandas==2.3.0
 prompt_toolkit==3.0.51
 psycopg2-binary==2.9.10
 pycparser==2.22
