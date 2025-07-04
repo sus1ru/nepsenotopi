@@ -4,13 +4,13 @@ import json
 from httpx import RemoteProtocolError, ReadError, ConnectError
 import tqdm
 
-from nepse_settings import NepseSettings
-from nepse_errors import (
+from nepse.utils.nepse_errors import (
     NepseInvalidServerResponse,
     NepseInvalidClientRequest,
     NepseNetworkError,
 )
-from request_manager import RequestManager
+from nepse.utils.nepse_settings import NepseSettings
+from nepse.utils.request_manager import RequestManager
 
 
 class Nepse(NepseSettings):
@@ -61,7 +61,6 @@ class Nepse(NepseSettings):
                     'error': response.text
                 }
 
-
         return wrapper
 
     @__request_handler
@@ -83,8 +82,8 @@ class Nepse(NepseSettings):
             data=payload,
         )
 
-    def fetch_data(self, url_alias):
-        method, url, payload_alias = self.get_url_data(url_alias)
+    def fetch_data(self, url_alias, params={}):
+        method, url, payload_alias = self.get_url_data(url_alias, params)
 
         if method == 'get':
             result = self.get(url)

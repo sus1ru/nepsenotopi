@@ -1,52 +1,63 @@
+from django.conf import settings
+
 class NepseSettings:
     BASE_URL = 'https://nepalstock.com'
     AUTHENTICATE_URL = '/api/authenticate/prove'
     REFRESH_URL = '/api/authenticate/refresh-token'
+    NEPSE_OPEN_URL = '/api/nots/nepse-data/market-open'
 
-    CSS_WASM_PATH = 'css.wasm'
+    CSS_WASM_PATH = settings.BASE_DIR / 'nepse/utils/css.wasm'
 
     ENDPOINTS = {
-        'nepse_open_url': {
+        'nepse_open': {
             'method': 'get',
             'url': '/api/nots/nepse-data/market-open'
         },
-        'price_volume_url': {
+        'sector': {
+            'method': 'get',
+            'url': '/api/nots/sector'
+        },
+        'share_group': {
+            'method': 'get',
+            'url': '/api/nots/security/shareGroup/'
+        },
+        'price_volume': {
             'method': 'get',
             'url': '/api/nots/securityDailyTradeStat/58'
         },
-        'summary_url': {
+        'summary': {
             'method': 'get',
             'url': '/api/nots/market-summary/'
         },
-        'top_ten_trade_url': {
+        'top_ten_trade': {
             'method': 'get',
             'url': '/api/nots/top-ten/trade'
         },
-        'top_ten_transaction_url': {
+        'top_ten_transaction': {
             'method': 'get',
             'url': '/api/nots/top-ten/transaction'
         },
-        'top_ten_turnover_url': {
+        'top_ten_turnover': {
             'method': 'get',
             'url': '/api/nots/top-ten/turnover'
         },
-        'supply_demand_url': {
+        'supply_demand': {
             'method': 'get',
             'url': '/api/nots/nepse-data/supplydemand'
         },
-        'top_gainers_url': {
+        'top_gainers': {
             'method': 'get',
             'url': '/api/nots/top-ten/top-gainer'
         },
-        'top_losers_url': {
+        'top_losers': {
             'method': 'get',
             'url': '/api/nots/top-ten/top-loser'
         },
-        'nepse_index_url': {
+        'nepse_index': {
             'method': 'get',
             'url': '/api/nots/nepse-index'
         },
-        'nepse_subindices_url': {
+        'nepse_subindices': {
             'method': 'get',
             'url': '/api/nots'
         },
@@ -58,17 +69,13 @@ class NepseSettings:
             'method': 'get',
             'url': '/api/nots/nepse-data/marketdepth/'
         },
-        'turnover_url': {
+        'turnover': {
             'method': 'get',
             'url': '/api/nots/top-ten/turnover'
         },
         'todays_price': {
             'method': 'post',
             'payload_alias': 'floorsheet',
-            'params': {
-                'size': 500,
-                'businessDate': None
-            },
             'url': '/api/nots/nepse-data/today-price'
         },
         'nepse_index_daily_graph': {
@@ -156,13 +163,13 @@ class NepseSettings:
             'payload_alias': 'basic',
             'url': '/api/nots/graph/index/61'
         },
-        'company_list_url': {
+        'company': {
             'method': 'get',
             'url': '/api/nots/company/list'
         },
-        'security_list_url': {
+        'security': {
             'method': 'get',
-            'url': '/api/nots/security?nonDelisted=true'
+            'url': '/api/nots/security'
         },
         'company_price_volume_history': {
             'method': 'get',
@@ -230,13 +237,12 @@ class NepseSettings:
         return None
 
     @classmethod
-    def get_url_data(cls, url_alias):
+    def get_url_data(cls, url_alias, params={}):
         url_data = cls.ENDPOINTS.get(url_alias, '')
         partial_url = url_data.get('url')
-        raw_params = url_data.get('params', {})
 
-        if raw_params:
-            params = '&'.join(f'{key}={val}' for key, val in raw_params.items())
-            partial_url = f'{partial_url}?&{params}'
+        if params:
+            params = '&'.join(f'{key}={val}' for key, val in params.items())
+            partial_url = f'{partial_url}?{params}'
 
         return url_data.get('method'), partial_url, url_data.get('payload_alias')

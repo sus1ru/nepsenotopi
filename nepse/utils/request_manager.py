@@ -3,8 +3,8 @@ import json
 from datetime import date
 import pywasm
 
-from nepse_settings import NepseSettings
-from nepse_errors import NepseNetworkError
+from nepse.utils.nepse_settings import NepseSettings
+from nepse.utils.nepse_errors import NepseNetworkError
 
 
 class RequestManager(NepseSettings):
@@ -107,7 +107,7 @@ class RequestManager(NepseSettings):
         print('#'*8, 'refreshing requisites', '#'*8)
         print()
         response = self.httpx_client.get(
-            url=self.generate_url('nepse_open_url'),
+            url=self.abs_url(self.NEPSE_OPEN_URL),
             headers=self.auth_headers,
         )
 
