@@ -107,7 +107,7 @@ class RequestManager(NepseSettings):
         print('#'*8, 'refreshing requisites', '#'*8)
         print()
         response = self.httpx_client.get(
-            url=self.generate_url(self.NEPSE_OPEN_URL),
+            url=self.abs_url(self.NEPSE_OPEN_URL),
             headers=self.auth_headers,
         )
 
