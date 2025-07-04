@@ -7,6 +7,10 @@ class BaseModel(models.Model):
         ('S', 'Suspended'),
         ('D', 'Delisted'),
     ]
+    BOOLEAN_CHOICES = [
+        ('Y', 'true'),
+        ('N', 'false'),
+    ]
     date_created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     date_updated = models.DateTimeField(auto_now=True, null=True, blank=True)
 
@@ -66,7 +70,11 @@ class ShareGroup(BaseModel):
     )
     description = models.CharField(max_length=512, null=True, blank=True)
     capital_range_min = models.IntegerField(null=True, blank=True)
-    is_default = models.CharField(max_length=16, null=True, blank=True)
+    is_default = models.CharField(
+        max_length=8,
+        choices=BaseModel.BOOLEAN_CHOICES,
+        null=True, blank=True
+    )
     active_status = models.CharField(
         max_length=8,
         choices=BaseModel.ACTIVE_STATUS,
@@ -83,7 +91,10 @@ class ShareGroup(BaseModel):
 
 
 class Security(BaseModel):
-    symbol = models.CharField(max_length=16, unique=True, null=True, blank=True)
+    symbol = models.CharField(
+        max_length=16, unique=True,
+        null=True, blank=True
+    )
     security_name = models.CharField(max_length=128, null=True, blank=True)
     name = models.CharField(max_length=128, null=True, blank=True)
     active_status = models.CharField(
@@ -91,7 +102,11 @@ class Security(BaseModel):
         choices=BaseModel.ACTIVE_STATUS,
         null=True, blank=True
     )
-    is_promoter = models.BooleanField(default=False, null=True, blank=True)
+    is_promoter = models.CharField(
+        max_length=8,
+        choices=BaseModel.BOOLEAN_CHOICES,
+        null=True, blank=True
+    )
 
     class Meta:
         indexes = [
@@ -102,11 +117,53 @@ class Security(BaseModel):
         ]
 
 
+class InstrumentType(BaseModel):
+    INSTRUMENT_TYPES = [
+        ('Equity', 'Equity'),
+        ('Mutual Funds', 'Mutual Funds'),
+        ('Non-Convertible Debentures', 'Non-Convertible Debentures'),
+        ('Preference Shares', 'Preference Shares'),
+    ]
+    INSTRUMENT_TYPE_CODES = [
+        ('EQ', 'Equity'),
+        ('MF', 'Mutual Funds'),
+        ('NCD', 'Non-Convertible Debentures'),
+        ('PS', 'Preference Shares'),
+    ]
+    code = models.CharField(
+        max_length=8, unique=True,
+        choices=INSTRUMENT_TYPE_CODES,
+        null=True, blank=True
+    )
+    description = models.CharField(
+        max_length=64, unique=True,
+        choices=INSTRUMENT_TYPES,
+        null=True, blank=True
+    )
+    active_status = models.CharField(
+        max_length=8,
+        choices=BaseModel.ACTIVE_STATUS,
+        null=True, blank=True
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=['code', 'active_status'],
+                name='instrument_type_code_idx'
+            ),
+        ]
+
+
 class Company(BaseModel):
     company_name = models.CharField(max_length=128, null=True, blank=True)
-    security = models.ForeignKey(
+    symbol = models.CharField(
+        max_length=16, unique=True,
+        null=True, blank=True
+    )
+    security = models.OneToOneField(
         'nepse.Security',
-        related_name='companies',
+        related_name='company',
         on_delete=models.DO_NOTHING,
         null=True, blank=True
     )
@@ -123,11 +180,20 @@ class Company(BaseModel):
         on_delete=models.DO_NOTHING,
         null=True, blank=True
     )
-    regulatory_body = models.CharField(max_length=128, null=True, blank=True)
-    instrument_type = models.CharField(max_length=64, null=True, blank=True)
+    instrument_type = models.ForeignKey(
+        'nepse.InstrumentType',
+        related_name='companies',
+        on_delete=models.DO_NOTHING,
+        null=True, blank=True
+    )
 
     class Meta:
-        pass
+        indexes = [
+            models.Index(
+                fields=['symbol', 'active_status'],
+                name='company_symbol_idx'
+            ),
+        ]
 
 
 class SecurityLog(BaseModel):
