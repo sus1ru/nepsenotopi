@@ -237,13 +237,12 @@ class NepseSettings:
         return None
 
     @classmethod
-    def get_url_data(cls, url_alias):
+    def get_url_data(cls, url_alias, params={}):
         url_data = cls.ENDPOINTS.get(url_alias, '')
         partial_url = url_data.get('url')
-        raw_params = url_data.get('params', {})
 
-        if raw_params:
-            params = '&'.join(f'{key}={val}' for key, val in raw_params.items())
-            partial_url = f'{partial_url}?&{params}'
+        if params:
+            params = '&'.join(f'{key}={val}' for key, val in params.items())
+            partial_url = f'{partial_url}?{params}'
 
         return url_data.get('method'), partial_url, url_data.get('payload_alias')

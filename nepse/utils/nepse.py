@@ -82,8 +82,8 @@ class Nepse(NepseSettings):
             data=payload,
         )
 
-    def fetch_data(self, url_alias):
-        method, url, payload_alias = self.get_url_data(url_alias)
+    def fetch_data(self, url_alias, params={}):
+        method, url, payload_alias = self.get_url_data(url_alias, params)
 
         if method == 'get':
             result = self.get(url)
