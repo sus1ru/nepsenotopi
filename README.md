@@ -1,3 +1,3 @@
 # nepsenotopi
 
-just another nepse data achiver
+just another nepse data archiver
