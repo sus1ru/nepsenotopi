@@ -38,7 +38,10 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
-    entrypoint: "celery --app nepsenotopi worker -f /logs/worker.log --loglevel=info"
+    entrypoint: [
+        "celery", "--app", "nepsenotopi", "worker",
+        "--loglevel=info", "-Q", "default,realtime"
+      ]
     depends_on:
       - web
       - redis
@@ -53,10 +56,14 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
-    entrypoint: "celery --app nepsenotopi beat -f /logs/worker.log --loglevel=info"
+    entrypoint: [
+        "celery", "--app", "nepsenotopi", "beat",
+        "--loglevel=info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"
+      ]
     depends_on:
       - web
       - redis
+      - worker
     volumes:
       - .:/code
       - ./logs/:/logs/
