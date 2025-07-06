@@ -122,7 +122,7 @@ class Command(BaseCommand):
 
         df.loc[df['symbol'].isin(df_np['symbol']), 'isPromoter'] = 'N'
 
-        raw_data = df.to_dict('records')
+        raw_data = df.to_dict(orient='records')
         self._sync(alias, raw_data)
 
     @_print_sync_status
@@ -175,7 +175,7 @@ class Command(BaseCommand):
             ],
             axis=1
         )
-        raw_data = df.to_dict('records')
+        raw_data = df.to_dict(orient='records')
         self._sync(alias, raw_data)
 
     def _sync(self, alias, raw_data):
@@ -191,7 +191,6 @@ class Command(BaseCommand):
         for row in cleaned_data:
             prep_rows.append(table(**row))
 
-        print(cleaned_data)
         table.objects.bulk_create(
             prep_rows, batch_size=1024,
             update_conflicts=True,
@@ -206,4 +205,4 @@ class Command(BaseCommand):
         )
         df = df.drop('id', axis=1, errors='ignore')
 
-        return df.to_dict('records'), list(df.columns)
+        return df.to_dict(orient='records'), list(df.columns)

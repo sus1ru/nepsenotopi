@@ -1,4 +1,5 @@
 import functools
+import time
 import httpx
 import json
 from httpx import RemoteProtocolError, ReadError, ConnectError
@@ -29,7 +30,7 @@ class Nepse(NepseSettings):
 
         self.sector_scrips = None
 
-    def __request_handler(func):
+    def _request_handler(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             try:
@@ -63,7 +64,7 @@ class Nepse(NepseSettings):
 
         return wrapper
 
-    @__request_handler
+    @_request_handler
     def get(self, url, with_auth_headers=True):
         return self.client.get(
             self.abs_url(url),
@@ -74,7 +75,7 @@ class Nepse(NepseSettings):
             ),
         )
 
-    @__request_handler
+    @_request_handler
     def post(self, url, payload):
         return self.client.post(
             self.abs_url(url),
@@ -83,18 +84,18 @@ class Nepse(NepseSettings):
         )
 
     def fetch_data(self, url_alias, params={}):
-        method, url, payload_alias = self.get_url_data(url_alias, params)
+        method, url, id_type = self.get_url_data(url_alias, params)
 
         if method == 'get':
             result = self.get(url)
 
         elif method == 'post':
-            payload = (
+            id_value = (
                 self
                 .request_manager
-                .fetch_payload_id(payload_alias=payload_alias)
+                .fetch_request_id(id_type=id_type)
             )
-            result = self.post(url, payload=json.dumps({'id': payload}))
+            result = self.post(url, payload=json.dumps({'id': id_value}))
 
         else:
             result = {}
