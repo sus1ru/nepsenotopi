@@ -20,16 +20,6 @@ class Nepse(NepseSettings):
         self.client = httpx.Client(verify=tls_verify, http2=True, timeout=100)
         self.request_manager = RequestManager(httpx_client=self.client)
 
-        # list of all company that were listed in nepse (including delisted but doesn't include promoter shares)
-        self.company_symbol_id_keymap = None
-        # list of all valid company that are not delisted (includes promoter share)
-        self.security_symbol_id_keymap = None
-
-        self.company_list = None
-        self.security_list = None
-
-        self.sector_scrips = None
-
     def _request_handler(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
