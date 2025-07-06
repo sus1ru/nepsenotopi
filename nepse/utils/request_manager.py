@@ -49,13 +49,14 @@ class RequestManager(NepseSettings):
             **self.HEADERS,
         }
 
-    def fetch_payload_id(self, payload_alias='basic'):
+    def fetch_request_id(self, id_type='basic'):
         """
-        payload_alias: 'basic', 'floorsheet', 'scrips'
+        id_type: 'basic', 'floorsheet', 'scrips'
         """
-        return self.request_requisites.get(payload_alias)
+        return self.request_requisites.get(id_type)
 
-    def __post_process_tokens(func):
+    
+    def _post_process_tokens(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             response = func(self, *args, **kwargs)
@@ -73,8 +74,15 @@ class RequestManager(NepseSettings):
                     .parse_token_response(response)
                     .copy()
                 )
+                # print('#'*8, 'post refreshing tokens', '#'*8)
+                # print(self.parsed_token_data)
+                # print('#'*75)
 
-                self.refresh_request_requisites()
+                if not self.request_requisites:
+                    self.refresh_request_requisites()
+                # print('#'*8, 'post refreshing requisites', '#'*8)
+                # print(self.request_requisites)
+                # print('#'*75)
 
             except json.JSONDecodeError:
                 return {
@@ -87,15 +95,15 @@ class RequestManager(NepseSettings):
 
         return wrapper
 
-    @__post_process_tokens
+    @_post_process_tokens
     def init_tokens(self):
         return self.httpx_client.get(url=self.init_auth_url)
 
-    @__post_process_tokens
+    @_post_process_tokens
     def refresh_tokens(self):
-        print()
-        print('#'*8, 'refreshing tokens', '#'*8)
-        print()
+        # print('### pre refreshing tokens ###')
+        # print(self.parsed_token_data)
+        # print('#'*75)
         return self.httpx_client.post(
             self.refresh_token_url,
             headers=self.auth_headers,
@@ -103,9 +111,9 @@ class RequestManager(NepseSettings):
         )
 
     def refresh_request_requisites(self):
-        print()
-        print('#'*8, 'refreshing requisites', '#'*8)
-        print()
+        # print('### pre refreshing requisites ###')
+        # print(self.request_requisites)
+        # print('#'*75)
         response = self.httpx_client.get(
             url=self.abs_url(self.NEPSE_OPEN_URL),
             headers=self.auth_headers,

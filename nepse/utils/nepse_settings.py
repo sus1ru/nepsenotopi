@@ -73,94 +73,94 @@ class NepseSettings:
             'method': 'get',
             'url': '/api/nots/top-ten/turnover'
         },
-        'todays_price': {
+        'today_price': {
             'method': 'post',
-            'payload_alias': 'floorsheet',
+            'id_type': 'floorsheet',
             'url': '/api/nots/nepse-data/today-price'
         },
         'nepse_index_daily_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/58'
         },
         'sensitive_index_daily_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/57'
         },
         'float_index_daily_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/62'
         },
         'sensitive_float_index_daily_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/63'
         },
         'banking_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/51'
         },
         'development_bank_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/55'
         },
         'finance_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/60'
         },
         'hotel_tourism_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/52'
         },
         'hydro_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/54'
         },
         'investment_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/67'
         },
         'life_insurance_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/65'
         },
         'manufacturing_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/56'
         },
         'microfinance_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/64'
         },
         'mutual_fund_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/66'
         },
         'non_life_insurance_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/59'
         },
         'others_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/53'
         },
         'trading_sub_index_graph': {
             'method': 'post',
-            'payload_alias': 'basic',
+            'id_type': 'basic',
             'url': '/api/nots/graph/index/61'
         },
         'company': {
@@ -177,22 +177,22 @@ class NepseSettings:
         },
         'company_daily_graph': {
             'method': 'post',
-            'payload_alias': 'scrips',
+            'id_type': 'scrips',
             'url': '/api/nots/market/graphdata/daily/'
         },
         'company_details': {
             'method': 'post',
-            'payload_alias': 'scrips',
+            'id_type': 'scrips',
             'url': '/api/nots/security/'
         },
         'floor_sheet': {
             'method': 'post',
-            'payload_alias': 'floorsheet',
+            'id_type': 'floorsheet',
             'url': '/api/nots/nepse-data/floorsheet'
         },
         'company_floorsheet': {
             'method': 'post',
-            'payload_alias': 'floorsheet',
+            'id_type': 'floorsheet',
             'url': '/api/nots/security/floorsheet/'
         }
     }
@@ -245,4 +245,4 @@ class NepseSettings:
             params = '&'.join(f'{key}={val}' for key, val in params.items())
             partial_url = f'{partial_url}?{params}'
 
-        return url_data.get('method'), partial_url, url_data.get('payload_alias')
+        return url_data.get('method'), partial_url, url_data.get('id_type')

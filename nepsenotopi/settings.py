@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 
+import redis
+from celery.schedules import crontab
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -40,6 +44,7 @@ INSTALLED_APPS = [
     'user',
     'nepse',
     'django_celery_beat',
+    'django_extensions',
     'rest_framework',
     'rest_framework.authtoken',
 ]
@@ -99,6 +104,41 @@ REST_FRAMEWORK = {
     )
 }
 
+
+# Redis/Celery settings
+
+REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', '6379'))
+REDIS_DB_INDEX = int(os.getenv('REDIS_DB_INDEX', '0'))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+
+REDIS_CLIENT = redis.Redis(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    # password=REDIS_PASSWORD,
+    db=REDIS_DB_INDEX
+)
+
+CELERY_DB_INDEX = int(os.environ.get('CELERY_DB_INDEX', '0'))
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/{CELERY_DB_INDEX}'
+CELERY_TASK_DEFAULT_QUEUE = "default"
+CELERY_TASK_RESULT_EXPIRES = (7 * 24 * 60 * 60)
+CELERY_WORKER_SEND_TASK_EVENTS = True
+CELERY_TASK_SEND_SENT_EVENT = True
+CELERY_TRACK_STARTED = True
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 50000
+
+CELERY_TASK_ROUTES = {
+    'nepse.tasks.fetch_daily_price_data': {'queue': 'realtime'},
+}
+
+CELERY_BEAT_SCHEDULE = {
+    'fetch-daily-price-data': {
+        'task': 'nepse.tasks.fetch_daily_price_data',
+        'schedule': crontab(minute='*/5', hour='11-14', day_of_week='0-4'),
+        'options': {'queue': 'realtime'}
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
