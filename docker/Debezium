@@ -1,0 +1,30 @@
+FROM debezium/connect:2.7.3.Final
+
+ENV CONFLUENT_URL=https://packages.confluent.io/maven/io/confluent \
+    MAVEN_REPO_URL=https://repo1.maven.org/maven2 \
+    KAFKA_PLUGIN_PATH=/kafka/connect/kafka-connect-avro-converter/ \
+    CONFLUENT_V=7.7.0 \
+    AVRO_V=1.11.3 \
+    GUAVA_V=32.0.1-jre
+
+RUN mkdir -p ${KAFKA_PLUGIN_PATH}
+
+# Download Confluent Avro converter JARs and dependencies
+ADD ${CONFLUENT_URL}/kafka-connect-avro-converter/${CONFLUENT_V}/kafka-connect-avro-converter-${CONFLUENT_V}.jar ${KAFKA_PLUGIN_PATH}
+ADD ${CONFLUENT_URL}/kafka-connect-avro-data/${CONFLUENT_V}/kafka-connect-avro-data-${CONFLUENT_V}.jar ${KAFKA_PLUGIN_PATH}
+ADD ${CONFLUENT_URL}/kafka-avro-serializer/${CONFLUENT_V}/kafka-avro-serializer-${CONFLUENT_V}.jar ${KAFKA_PLUGIN_PATH}
+ADD ${CONFLUENT_URL}/kafka-schema-converter/${CONFLUENT_V}/kafka-schema-converter-${CONFLUENT_V}.jar ${KAFKA_PLUGIN_PATH}
+ADD ${CONFLUENT_URL}/kafka-schema-serializer/${CONFLUENT_V}/kafka-schema-serializer-${CONFLUENT_V}.jar ${KAFKA_PLUGIN_PATH}
+ADD ${CONFLUENT_URL}/kafka-schema-registry-client/${CONFLUENT_V}/kafka-schema-registry-client-${CONFLUENT_V}.jar ${KAFKA_PLUGIN_PATH}
+ADD ${CONFLUENT_URL}/common-config/${CONFLUENT_V}/common-config-${CONFLUENT_V}.jar ${KAFKA_PLUGIN_PATH}
+ADD ${CONFLUENT_URL}/common-utils/${CONFLUENT_V}/common-utils-${CONFLUENT_V}.jar ${KAFKA_PLUGIN_PATH}
+
+# Add other dependencies
+ADD ${MAVEN_REPO_URL}/org/apache/avro/avro/${AVRO_V}/avro-${AVRO_V}.jar ${KAFKA_PLUGIN_PATH}
+ADD ${MAVEN_REPO_URL}/com/google/guava/guava/${GUAVA_V}/guava-${GUAVA_V}.jar ${KAFKA_PLUGIN_PATH}
+ADD ${MAVEN_REPO_URL}/com/google/guava/failureaccess/1.0.3/failureaccess-1.0.3.jar ${KAFKA_PLUGIN_PATH}
+ADD ${MAVEN_REPO_URL}/org/apache/commons/commons-compress/1.21/commons-compress-1.21.jar ${KAFKA_PLUGIN_PATH}
+
+USER root
+RUN chown -R kafka:kafka ${KAFKA_PLUGIN_PATH}
+USER kafka
