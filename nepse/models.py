@@ -4,6 +4,7 @@ from django.db import models
 class BaseModel(models.Model):
     ACTIVE_STATUS = [
         ('A', 'Active'),
+        ('I', 'Inactive'),
         ('S', 'Suspended'),
         ('D', 'Delisted'),
     ]
@@ -164,7 +165,7 @@ class Company(BaseModel):
     security = models.OneToOneField(
         'nepse.Security',
         related_name='company',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         null=True, blank=True
     )
     active_status = models.CharField(
@@ -177,13 +178,13 @@ class Company(BaseModel):
     sector = models.ForeignKey(
         'nepse.Sector',
         related_name='companies',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         null=True, blank=True
     )
     instrument_type = models.ForeignKey(
         'nepse.InstrumentType',
         related_name='companies',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         null=True, blank=True
     )
 
@@ -201,7 +202,7 @@ class SecurityLog(BaseModel):
     security = models.ForeignKey(
         'nepse.Security',
         related_name='security_logs',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         null=True, blank=True
     )
     open_price = models.DecimalField(

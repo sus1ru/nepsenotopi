@@ -146,7 +146,7 @@ class Command(BaseCommand):
                 )
                 return urlunparse(cleaned)
 
-            return ''
+            return None
 
         for _alias in ['sector', 'security', 'instrument_type']:
             self.SETTINGS.get(_alias).get('callback')(nepse, _alias)
@@ -155,8 +155,11 @@ class Command(BaseCommand):
         sector_map = dict(Sector.objects.values_list('sector_description', 'id'))
         instr_type_map = dict(InstrumentType.objects.values_list('description', 'id'))
 
+
         raw_data = nepse.fetch_data('company')
         df = pd.DataFrame(raw_data)
+        
+        df[['companyEmail', 'website']] = df[['companyEmail', 'website']].apply(lambda x: x.str.strip())
         df['sectorId'] = (
             df['sectorName']
             .map(sector_map)
