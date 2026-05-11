@@ -11,14 +11,25 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import environ
 
+from  neomodel import get_config
 import redis
 from celery.schedules import crontab
+
+DEFAULT_QUEUE_OPTIONS = {
+    'queue': 'default',
+    'exchange': 'default',
+    'routing_key': 'default',
+}
+from .settings_jazzmin import *
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -29,27 +40,34 @@ SECRET_KEY = 'django-insecure-whsfw*d+@lq_l#70iet@ahxaeyy#u$$52-yi#7^s6pu4tnn*nv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'user',
     'nepse',
+    'portfolio.apps.PortfolioConfig',
     'django_celery_beat',
     'django_extensions',
+    'django_filters',
+
     'rest_framework',
     'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -85,13 +103,19 @@ WSGI_APPLICATION = 'nepsenotopi.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get('POSTGRES_DB', 'whomidb'),
-        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
-        'HOST': os.environ.get('POSTGRES_HOST', 'pgdb'),
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        'NAME': env.str('POSTGRES_DB', 'whomidb'),
+        'USER': env.str('POSTGRES_USER', 'postgres'),
+        'PASSWORD': env.str('POSTGRES_PASSWORD', ''),
+        'HOST': env.str('POSTGRES_HOST', 'pgdb'),
+        'PORT': env.int('POSTGRES_PORT', '5432'),
     }
 }
+
+# NEO4J SETTINGS
+if os.environ.get('ACTIVATE_NEO4J') in ['False', 'false']:
+    NEO4J_USERNAME, NEO4J_PASSWORD = os.environ.get('NEO4J_AUTH').split('/')
+    config = get_config()
+    config.database_url = "bolt://{NEO4J_USERNAME}:{NEO4J_PASSWORD}@neo4j:7687"
 
 
 # Default User Related Model
@@ -100,17 +124,28 @@ AUTH_USER_MODEL = 'user.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ),
 }
 
+# Mongo settings
+MONGO_INITDB_ROOT_USERNAME = env.str('MONGO_INITDB_ROOT_USERNAME')
+MONGO_INITDB_ROOT_PASSWORD = env.str('MONGO_INITDB_ROOT_PASSWORD')
+MONGO_HOST = env.str('MONGO_HOST')
+MONGO_PORT = env.int('MONGO_PORT')
+MONGO_INITDB_DATABASE = env.str('MONGO_INITDB_DATABASE')
+MONGO_URL = env.str('MONGO_URL')
 
 # Redis/Celery settings
-
-REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
-REDIS_PORT = int(os.environ.get('REDIS_PORT', '6379'))
-REDIS_DB_INDEX = int(os.getenv('REDIS_DB_INDEX', '0'))
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+REDIS_HOST = env.str('REDIS_HOST', 'redis')
+REDIS_PORT = env.int('REDIS_PORT', 6379)
+REDIS_DB_INDEX = env.int('REDIS_DB_INDEX', 0)
+REDIS_PASSWORD = env.str('REDIS_PASSWORD')
 
 REDIS_CLIENT = redis.Redis(
     host=REDIS_HOST,
@@ -119,7 +154,7 @@ REDIS_CLIENT = redis.Redis(
     db=REDIS_DB_INDEX
 )
 
-CELERY_DB_INDEX = int(os.environ.get('CELERY_DB_INDEX', '0'))
+CELERY_DB_INDEX = env.int('CELERY_DB_INDEX', 0)
 CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/{CELERY_DB_INDEX}'
 CELERY_TASK_DEFAULT_QUEUE = "default"
 CELERY_TASK_RESULT_EXPIRES = (7 * 24 * 60 * 60)
@@ -130,15 +165,53 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD = 50000
 
 CELERY_TASK_ROUTES = {
     'nepse.tasks.fetch_daily_price_data': {'queue': 'realtime'},
+    'portfolio.tasks.check_watchlist_alerts': {'queue': 'realtime'},
 }
 
+# CELERY_BEAT_SCHEDULE = {
+#     'fetch-daily-price-data': {
+#         'task': 'nepse.tasks.fetch_daily_price_data',
+#         'schedule': crontab(minute='*/2', hour='11-14', day_of_week='1-5'),
+#         'options': {'queue': 'realtime'}
+#     },
+# }
+
 CELERY_BEAT_SCHEDULE = {
-    'fetch-daily-price-data': {
+    'fetch-daily-price-data-10-45-to-10-59': {
         'task': 'nepse.tasks.fetch_daily_price_data',
-        'schedule': crontab(minute='*/5', hour='11-14', day_of_week='0-4'),
-        'options': {'queue': 'realtime'}
+        'schedule': crontab(minute='45-59/2', hour='10', day_of_week='1-5'),
+        'options': DEFAULT_QUEUE_OPTIONS,
+    },
+    'fetch-daily-price-data-11-to-14': {
+        'task': 'nepse.tasks.fetch_daily_price_data',
+        'schedule': crontab(minute='*/2', hour='11-14', day_of_week='1-5'),
+        'options': DEFAULT_QUEUE_OPTIONS,
+    },
+    'fetch-daily-price-data-15-00-to-15-02': {
+        'task': 'nepse.tasks.fetch_daily_price_data',
+        'schedule': crontab(minute='0,2', hour='15', day_of_week='1-5'),
+        'options': DEFAULT_QUEUE_OPTIONS,
+    },
+    'check-watchlist-alerts': {
+        'task': 'portfolio.tasks.check_watchlist_alerts',
+        'schedule': crontab(minute='*/2'),
+        'options': DEFAULT_QUEUE_OPTIONS,
     },
 }
+
+DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', 'noreply@nepsenotopi.local')
+SITE_URL = env.str('SITE_URL', 'http://localhost:8000')
+EMAIL_BACKEND = env.str(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend',
+)
+EMAIL_HOST = env.str('EMAIL_HOST', 'localhost')
+EMAIL_PORT = env.int('EMAIL_PORT', 25)
+EMAIL_HOST_USER = env.str('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', False)
+EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', False)
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
