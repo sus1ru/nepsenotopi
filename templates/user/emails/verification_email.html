@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Verify your Nepsenotopi account</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+    <h1 style="font-size: 22px;">Verify your email</h1>
+    <p>Hello {{ user.get_full_name|default:user.email }},</p>
+    <p>Thanks for registering with Nepsenotopi. Please verify your email address to activate login for your account.</p>
+    <p>
+      <a href="{{ verification_url }}" style="display: inline-block; padding: 10px 16px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px;">
+        Verify email
+      </a>
+    </p>
+    <p>If the button does not work, open this link:</p>
+    <p><a href="{{ verification_url }}">{{ verification_url }}</a></p>
+    <p>If you did not create this account, you can ignore this email.</p>
+  </body>
+</html>
