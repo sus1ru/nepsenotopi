@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from confluent_kafka import Consumer
 from confluent_kafka.schema_registry import SchemaRegistryClient
@@ -6,13 +7,18 @@ from confluent_kafka.schema_registry.avro import AvroDeserializer
 from confluent_kafka.serialization import SerializationContext, MessageField
 
 from django.apps import apps
+from django.conf import settings
 from django.db.models import DateTimeField
+
+from mongoengine import connect
 
 from nepse.models import Sector
 from nepse.mongo_models import (
     SectorDoc, ShareGroupDoc, InstrumentTypeDoc,
     SecurityDoc, CompanyDoc, SecurityLogDoc,
 )
+
+connect(host=settings.MONGO_URL, alias='nepsedb')
 
 SYNC_SETTINGS = {
     'nepse_sector': {
@@ -56,7 +62,6 @@ class MongoSync:
         }
 
         self.sanitize_changes()
-
 
     @property
     def op(self):
@@ -103,8 +108,8 @@ class MongoSync:
                         snapshot_data[field] = field_handler(val)
 
     def sync(self):
-        print(f'#### DJ Model: {self.dj_model.__name__}')
-        print(f'#### Instance: {self.pk}')
+        print(f'#### DJ Model: {self.dj_model.__name__} - {self.pk}')
+        print('#### Changes:', self.changes)
         try:
             if self.op == 'c':
                 print('## Inserting ##')
@@ -124,7 +129,6 @@ class MongoSync:
         except Exception as e:
             print()
             print(e)
-            print(self.changes)
             return None
 
         return doc
@@ -139,6 +143,9 @@ class MongoSync:
 
         if doc is None:
             return self._insert()
+
+        for field, value in self.after.items():
+            setattr(doc, field, value)
 
         doc.save()
         return doc
@@ -178,7 +185,7 @@ class DBZConsumer:
             'cdc.public.nepse_security',
             'cdc.public.nepse_securitylog',
         ]
-        
+
         print('Subscribed to topics:')
         print('\n'.join(f' - {topic}' for topic in self.TOPIC))
 
@@ -198,7 +205,6 @@ class DBZConsumer:
                     msg.value(),
                     SerializationContext(msg.topic(), MessageField.VALUE)
                 )
-                print(record)
 
                 mongo_sync = MongoSync(changes=record)
                 mongo_sync.sync()

@@ -20,7 +20,10 @@ class BaseDoc(Document):
         default=lambda: datetime.now(timezone.utc), null=True, required=False
     )
 
-    meta = {"abstract": True}
+    meta = {
+        "abstract": True,
+        "db_alias": "nepsedb",
+    }
 
     ACTIVE_STATUS = ("A", "I", "S", "D")
     BOOLEAN_CHOICES = ("Y", "N")
