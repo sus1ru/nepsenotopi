@@ -1,0 +1,263 @@
+services:
+  web:
+    env_file: ./env/.env
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    restart: always
+    volumes:
+      - .:/code
+    depends_on:
+      - pgdb
+    ports:
+      - 8020:8000
+    entrypoint: sh /code/entrypoint.sh
+    networks:
+      - nepse_no_topi
+
+  pgdb:
+    image: postgres:16-alpine
+    restart: always
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data/
+    ports:
+      - 5452:5432
+    env_file: ./env/.env
+    command: >
+      postgres
+        -c wal_level=logical
+        -c max_wal_senders=10
+        -c max_replication_slots=10
+    healthcheck:
+      test: [ 'CMD', 'psql', '-U', 'postgres', '-c', 'SELECT 1' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nepse_no_topi
+
+  # mongo:
+  #   image: mongo
+  #   restart: always
+  #   volumes:
+  #     - ./mongo_data:/db/data
+  #   ports:
+  #     - 27017:27017
+  #   env_file: ./env/.env
+  #   networks:
+  #     - nepse_no_topi
+
+  # mongo-express:
+  #   image: mongo-express
+  #   restart: always
+  #   ports:
+  #     - 8085:8081
+  #   depends_on:
+  #     - mongo
+  #   env_file: ./env/.env
+  #   networks:
+  #     - nepse_no_topi
+
+  # neo4j:
+  #     image: neo4j:trixie
+  #     restart: always
+  #     ports:
+  #       - "7474:7474"
+  #       - "7687:7687"
+  #     env_file: ./env/.env
+  #     volumes:
+  #       - ./neo4j/data:/data
+  #       - ./neo4j/logs:/logs
+  #       - ./neo4j/import:/import
+  #       - ./neo4j/plugins:/plugins
+  #     networks:
+  #       - nepse_no_topi
+
+  redis:
+    image: redis:alpine
+    restart: always
+    entrypoint: redis-server --appendonly yes
+    # ports:
+    #   - 6379:6379
+    volumes:
+      - ./redis_data:/data
+      - ./redis/rc.local:/etc/rc.local
+    networks:
+      - nepse_no_topi
+
+  worker:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    restart: always
+    entrypoint: [
+        "celery", "--app", "nepsenotopi", "worker",
+        "--loglevel=info", "-Q", "default,realtime"
+      ]
+    depends_on:
+      - web
+      - redis
+    volumes:
+      - .:/code
+      - ./logs/:/logs/
+    env_file: ./env/.env
+    networks:
+      - nepse_no_topi
+
+  beat:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    restart: always
+    entrypoint: [
+        "celery", "--app", "nepsenotopi", "beat",
+        "--loglevel=info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"
+      ]
+    depends_on:
+      - web
+      - redis
+      - worker
+    volumes:
+      - .:/code
+      - ./logs/:/logs/
+    env_file: ./env/.env
+    networks:
+      - nepse_no_topi
+
+  # cdc-sync:
+  #   build:
+  #     context: .
+  #     dockerfile: ./docker/Dockerfile
+  #   restart: always
+  #   entrypoint: ["python", "/code/cdc_sync.py"]
+  #   depends_on:
+  #     - web
+  #     - broker
+  #     - schemaregistry
+  #     - mongo
+  #   env_file: ./env/.env
+  #   volumes:
+  #     - .:/code
+  #   networks:
+  #     - nepse_no_topi
+
+  # zookeeper:
+  #   image: confluentinc/cp-zookeeper:7.4.10
+  #   hostname: zookeeper
+  #   container_name: zookeeper
+  #   ports:
+  #     - '2181:2181'
+  #   environment:
+  #     ZOOKEEPER_CLIENT_PORT: 2181
+  #     ZOOKEEPER_TICK_TIME: 2000
+  #   volumes:
+  #     - ./zookeeper_data:/var/lib/zookeeper/data
+  #     - ./zookeeper_log:/var/lib/zookeeper/log
+  #   healthcheck:
+  #     test: echo srvr | nc zookeeper 2181 || exit 1
+  #     start_period: 10s
+  #     retries: 20
+  #     interval: 10s
+  #   networks:
+  #     - nepse_no_topi
+
+  # schemaregistry:
+  #   image: confluentinc/cp-schema-registry:7.4.10
+  #   hostname: schemaregistry
+  #   container_name: schemaregistry
+  #   depends_on:
+  #     broker:
+  #       condition: service_healthy
+  #   ports:
+  #     - "8081:8081"
+  #   env_file: ./env/.schema_registry_env
+  #   healthcheck:
+  #     test: [ "CMD", "curl", "-f", "http://localhost:8081" ]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #   networks:
+  #     - nepse_no_topi
+
+  # broker:
+  #   image: confluentinc/cp-kafka:7.4.10
+  #   hostname: broker
+  #   container_name: broker
+  #   ports:
+  #     - '29092:29092'
+  #     - '9092:9092'
+  #     - '9101:9101'
+  #   env_file: ./env/.kafka_broker_env
+  #   volumes:
+  #     - ./kafka_data:/var/lib/kafka/data
+  #   healthcheck:
+  #     test: nc -z localhost 9092 || exit -1
+  #     start_period: 15s
+  #     interval: 5s
+  #     timeout: 10s
+  #     retries: 10
+  #   networks:
+  #     - nepse_no_topi
+
+  # control-center:
+  #   image: confluentinc/cp-enterprise-control-center:7.4.10
+  #   hostname: control-center
+  #   container_name: control-center
+  #   depends_on:
+  #     broker:
+  #       condition: service_healthy
+  #   ports:
+  #     - "9021:9021"
+  #   env_file: ./env/.control_center_env
+  #   volumes:
+  #     - ./control_center_data:/var/lib/confluent-control-center
+  #   healthcheck:
+  #     test: [ "CMD", "curl", "-f", "http://localhost:9021/health" ]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #   networks:
+  #     - nepse_no_topi
+
+  # debezium:
+  #   build:
+  #     context: .
+  #     dockerfile: ./docker/Debezium
+  #   container_name: debezium
+  #   hostname: debezium
+  #   depends_on:
+  #     pgdb:
+  #       condition: service_healthy
+  #     broker:
+  #       condition: service_healthy
+  #   ports:
+  #     - '8093:8083'
+  #   env_file: ./env/.debezium_env
+  #   healthcheck:
+  #     test:
+  #       [ 'CMD', 'curl', '--silent', '--fail', '-X', 'GET', 'http://localhost:8083/connectors', ]
+  #     start_period: 10s
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - nepse_no_topi
+
+  # debezium-ui:
+  #   image: debezium/debezium-ui:latest
+  #   container_name: debezium-ui
+  #   hostname: debezium-ui
+  #   depends_on:
+  #     debezium:
+  #       condition: service_healthy
+  #   ports:
+  #     - '8080:8080'
+  #   environment:
+  #     KAFKA_CONNECT_URIS: http://debezium:8083
+  #   networks:
+  #     - nepse_no_topi
+
+networks:
+  nepse_no_topi:
+    name: nepse_no_topi
+    driver: bridge
